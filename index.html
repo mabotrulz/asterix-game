@@ -14,16 +14,15 @@ body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;display:flex;justify-c
 .road-label{text-align:center;color:#ddd;font-size:clamp(11px,2.5vw,13px);padding:2px;font-style:italic}
 .grid-area{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px;gap:3px}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(2px,0.5vw,4px);width:min(100%,500px);aspect-ratio:1;padding:4px}
-.card{position:relative;border-radius:6px;overflow:hidden;cursor:default;transition:all 0.2s;border:2px solid #5a7a5a;background:#4a6a4a}
+.card{position:relative;border-radius:6px;overflow:hidden;cursor:default;transition:all 0.2s;border:2px solid #5a7a5a;background:#4a6a4a;aspect-ratio:1;min-width:0}
 .card.forest{background:#3d6b3d}
 .card.road{border-color:#8a7a5a}
 .card.missing{border-color:#f1c40f;border-style:dashed;background:rgba(241,196,15,0.08);cursor:pointer}
 .card.missing:hover{border-color:#4ecca3;transform:scale(1.05)}
-.card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5vw,36px);color:#f1c40f;font-weight:700}
+.card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,30px);color:#f1c40f;font-weight:700}
 .card.filled{border-color:#4ecca3;animation:popIn 0.3s ease}
-.road-canvas{position:absolute;inset:0;width:100%;height:100%}
-.road-canvas .rline{stroke:#c8a85e;stroke-linecap:round;fill:none}
-.road-canvas .rline.r{stroke:#a08040}
+.card svg{width:100%;height:100%;display:block}
+.char-icon{position:absolute;width:clamp(20px,5vw,36px);height:clamp(20px,5vw,36px);object-fit:contain;pointer-events:none;z-index:2;image-rendering:pixelated}
 .roman-icon,.char-icon{position:absolute;width:clamp(12px,3vw,22px);height:clamp(12px,3vw,22px);object-fit:contain;pointer-events:none}
 @keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
 
@@ -383,6 +382,11 @@ function buildLevel(){
   shuffle(candidates);
   missingPositions=candidates.slice(0,Math.min(missingCount,candidates.length));
   
+  // Clear roadGrid at missing positions so allFilled check works
+  missingPositions.forEach(function(pos){
+    roadGrid[pos.r][pos.c]=0;
+  });
+  
   // Store correct answer types
   currentAnswers=[];
   missingPositions.forEach(function(pos){
@@ -539,24 +543,41 @@ function checkChoice(el,type){
 }
 
 function showVictory(){
-  var rewardChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
-  var isBoar=Math.random()<0.4;
+  // Determine the reward at the exit cell
+  var exitType=exitCellType();
+  var isBoar=!exitType.hasRoman&&Math.random()<0.5;
   
-  var overlay=document.getElementById('winOverlay');
-  document.getElementById('winTitle').textContent='🏆 Vitória!';
+  // Walk animation: highlight road cells one by one to simulate Obelix walking
+  var delay=0;
+  roadPath.forEach(function(pos,idx){
+    if(idx===0)return; // skip start (Obelix is already there)
+    delay+=150;
+    setTimeout(function(){
+      var card=document.querySelectorAll('.card')[pos[0]*GRID+pos[1]];
+      if(card)card.style.boxShadow='inset 0 0 15px rgba(241,196,15,0.5)';
+    },delay);
+  });
   
-  if(isBoar){
-    document.getElementById('winSub').textContent='Obelix encontrou o javali assado! 🐗';
-    document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img">';
-    speak('Obelix encontrou o javali!');
-  }else{
-    document.getElementById('winSub').textContent='Salvaste o '+rewardChar.name+'! 🎉';
-    document.getElementById('winReward').innerHTML='<img src="'+rewardChar.img+'" class="reward-img">';
-    speak('Salvaste o '+rewardChar.name+'!');
-  }
-  
-  overlay.classList.add('active');
-  isWaiting=false;
+  // Victory overlay after walk
+  var walkTime=roadPath.length*150+500;
+  setTimeout(function(){
+    var overlay=document.getElementById('winOverlay');
+    document.getElementById('winTitle').textContent='🏆 Vitória!';
+    
+    if(isBoar){
+      document.getElementById('winSub').textContent='Obelix encontrou o javali assado! 🐗';
+      document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
+      speak('Obelix encontrou o javali!');
+    }else{
+      var rChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
+      document.getElementById('winSub').textContent='Salvaste o '+rChar.name+'! 🎉';
+      document.getElementById('winReward').innerHTML='<img src="'+rChar.img+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
+      speak('Salvaste o '+rChar.name+'!');
+    }
+    
+    overlay.classList.add('active');
+    isWaiting=false;
+  },walkTime);
 }
 
 function nextLevel(){
