@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Via Gálica — Asterix</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100dvh;overflow:hidden;user-select:none}
+.game{width:100vw;height:100dvh;max-width:600px;background:linear-gradient(180deg,#2d4a3e,#3a5a4a);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.header{display:flex;justify-content:space-between;align-items:center;padding:4px 10px;color:#ddd;font-size:clamp(11px,2.5vw,14px);flex-shrink:0;background:rgba(0,0,0,0.3)}
+.header .score{color:#f1c40f;font-weight:700}
+.header .level{color:#4ecca3}
+.road-label{text-align:center;color:#ddd;font-size:clamp(11px,2.5vw,13px);padding:2px;font-style:italic}
+.grid-area{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px;gap:3px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(2px,0.5vw,4px);width:min(100%,500px);aspect-ratio:1;padding:4px}
+.card{position:relative;border-radius:6px;overflow:hidden;cursor:default;transition:all 0.2s;border:2px solid #5a7a5a;background:#4a6a4a}
+.card.forest{background:#3d6b3d}
+.card.road{border-color:#8a7a5a}
+.card.missing{border-color:#f1c40f;border-style:dashed;background:rgba(241,196,15,0.08);cursor:pointer}
+.card.missing:hover{border-color:#4ecca3;transform:scale(1.05)}
+.card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5vw,36px);color:#f1c40f;font-weight:700}
+.card.filled{border-color:#4ecca3;animation:popIn 0.3s ease}
+.road-canvas{position:absolute;inset:0;width:100%;height:100%}
+.road-canvas .rline{stroke:#c8a85e;stroke-linecap:round;fill:none}
+.road-canvas .rline.r{stroke:#a08040}
+.roman-icon,.char-icon{position:absolute;width:clamp(12px,3vw,22px);height:clamp(12px,3vw,22px);object-fit:contain;pointer-events:none}
+@keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+.choices{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(4px,1vw,8px);padding:4px 10px 8px;flex-shrink:0}
+.choice-btn{background:#3a5a3a;border:3px solid #5a7a5a;border-radius:10px;padding:4px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;aspect-ratio:1;position:relative}
+.choice-btn:hover{border-color:#f1c40f;transform:scale(1.05)}
+.choice-btn.correct{border-color:#4ecca3;background:rgba(78,204,163,0.15)}
+.choice-btn.wrong{border-color:#e74c3c;background:rgba(231,76,60,0.15);animation:shake 0.35s}
+.choice-btn svg{width:100%;height:100%}
+.choice-btn .ch-roman{position:absolute;bottom:clamp(8px,2vw,14px);right:clamp(4px,1vw,8px);width:clamp(10px,2.5vw,18px);height:clamp(10px,2.5vw,18px);object-fit:contain;opacity:0.7;pointer-events:none}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+.feedback{text-align:center;min-height:18px;flex-shrink:0;font-size:clamp(12px,2.5vw,15px);font-weight:600}
+.feedback.ok{color:#4ecca3}.feedback.fail{color:#e74c3c}
+
+/* Win overlay */
+.win-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity 0.5s;padding:20px;text-align:center}
+.win-overlay.active{opacity:1;pointer-events:all}
+.win-overlay h2{font-size:clamp(22px,6vw,40px);color:#f1c40f;margin-bottom:4px}
+.win-overlay .sub{font-size:clamp(16px,4vw,28px);color:#4ecca3;margin:6px 0}
+.win-overlay .reward{font-size:clamp(40px,12vw,80px);margin:8px 0}
+.win-overlay .reward-img{width:clamp(60px,16vw,120px);height:clamp(60px,16vw,120px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px}
+.win-overlay button{padding:10px 32px;font-size:clamp(14px,3vw,18px);font-weight:700;background:#4ecca3;color:#1a1a2e;border:none;border-radius:12px;cursor:pointer;margin-top:10px}
+
+/* Start overlay */
+.start-overlay{position:absolute;inset:0;z-index:300;background:rgba(30,60,40,0.95);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:30px;text-align:center;transition:opacity 0.5s}
+.start-overlay.hidden{opacity:0;pointer-events:none}
+.start-overlay .logo{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.start-overlay .logo img{width:clamp(40px,10vw,70px);height:clamp(40px,10vw,70px);border-radius:10px;background:rgba(255,255,255,0.1);padding:4px}
+.start-overlay h1{color:#f1c40f;font-size:clamp(24px,7vw,42px);margin-bottom:4px}
+.start-overlay p{color:#aaa;font-size:clamp(12px,2.5vw,15px);margin-bottom:16px}
+.start-overlay .start-btn{padding:14px 44px;font-size:clamp(18px,4vw,24px);font-weight:700;background:linear-gradient(135deg,#c8a85e,#8a7a3a);color:#1a1a2e;border:none;border-radius:16px;cursor:pointer;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="header">
+    <span>🏛️ Via Gálica</span>
+    <span class="level" id="levelDisplay">Nível 1</span>
+    <span class="score" id="scoreDisplay">0 ⭐</span>
+  </div>
+  <div class="road-label" id="roadLabel">⚔️ Liga a estrada até ao javali!</div>
+  
+  <div class="grid-area">
+    <div class="grid" id="grid"></div>
+  </div>
+  
+  <div class="choices" id="choices"></div>
+  <div class="feedback" id="feedback"></div>
+  
+  <div class="win-overlay" id="winOverlay">
+    <h2 id="winTitle">🏆 Vitória!</h2>
+    <div class="sub" id="winSub">Salvaste o Asterix!</div>
+    <div id="winReward"></div>
+    <button onclick="nextLevel()">Próximo nível →</button>
+  </div>
+  
+  <div class="start-overlay" id="startOverlay">
+    <div class="logo">
+      <img src="assets/obelix.png" alt=""><span style="color:#f1c40f;font-size:32px">+</span><img src="assets/boar.png" alt="">
+    </div>
+    <h1>Via Gálica</h1>
+    <p>Ajuda o Obélix a completar a estrada! Escolhe o troço certo para ligar o caminho até ao javali 🐗</p>
+    <button class="start-btn" onclick="startGame()">▶ COMEÇAR</button>
+  </div>
+</div>
+
+<script>
+// ========== CONSTANTS ==========
+const GRID=5;
+const CHARS={
+  obelix:'assets/obelix.png',
+  asterix:'assets/asterix.png',
+  roman:'assets/roman.png',
+  boar:'assets/boar.png',
+  getafix:'assets/getafix.png',
+  dogmatix:'assets/dogmatix.png',
+};
+
+const SAVE_CHARS=[
+  {name:'Asterix',img:'assets/asterix.png'},
+  {name:'Getafix',img:'assets/getafix.png'},
+  {name:'Dogmatix',img:'assets/dogmatix.png'},
+];
+
+// Road piece types: [connections top,right,bottom,left] (0=none,1=road)
+// 0=empty, 1=straight NS, 2=straight EW, 3=curve NE, 4=curve SE, 5=curve SW, 6=curve NW
+// 7=T-junction T, 8=T-junction R, 9=T-junction B, 10=T-junction L, 11=cross
+const PIECES={
+  0:[0,0,0,0],      // forest
+  1:[1,0,1,0],      // │
+  2:[0,1,0,1],      // ─
+  3:[1,1,0,0],      // └
+  4:[0,1,1,0],      // ┌
+  5:[0,0,1,1],      // ┐
+  6:[1,0,0,1],      // ┘
+};
+
+// SVG paths for each piece type (centered in card)
+function getPieceSVG(type, w, h, hasRoman){
+  const cx=w/2, cy=h/2;
+  const r=Math.min(w,h)*0.35;
+  const paths={
+    1:`M${cx},${cy-r} L${cx},${cy+r}`,
+    2:`M${cx-r},${cy} L${cx+r},${cy}`,
+    3:`M${cx},${cy-r} L${cx},${cy} L${cx+r},${cy}`,
+    4:`M${cx},${cy} L${cx+r},${cy} L${cx},${cy+r}`,
+    5:`M${cx-r},${cy} L${cx},${cy} L${cx},${cy+r}`,
+    6:`M${cx-r},${cy} L${cx},${cy} L${cx},${cy-r}`,
+  };
+  var d=paths[type]||'';
+  return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">'+
+    '<line x1="'+(cx-r-2)+'" y1="'+cy+'" x2="'+(cx+r+2)+'" y2="'+cy+
+    '" stroke="#6a7a3a" stroke-width="'+(r*0.15)+'" opacity="0.4" stroke-dasharray="4,4"/>'+
+    '<line x1="'+cx+'" y1="'+(cy-r-2)+'" x2="'+cx+'" y2="'+(cy+r+2)+
+    '" stroke="#6a7a3a" stroke-width="'+(r*0.15)+'" opacity="0.4" stroke-dasharray="4,4"/>'+
+    '<path d="'+d+'" stroke="#c8a85e" stroke-width="'+(r*0.4)+'" fill="none" stroke-linecap="round"/>'+
+    (hasRoman ? '<image href="'+CHARS.roman+'" x="'+(cx-r*0.5)+'" y="'+(cy-r*0.5)+'" width="'+(r*0.9)+'" height="'+(r*0.9)+'" opacity="0.8"/>' : '')+
+    '</svg>';
+}
+
+function getRomanFromType(type){
+  return [3,4,5,6].indexOf(type)>=0;
+}
+
+// ========== ROAD GENERATION ==========
+function generateRoad(){
+  // Generate a continuous path from one edge to another
+  var grid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
+  var dirs=[[-1,0],[0,1],[1,0],[0,-1]]; // N,E,S,W
+  var dirNames=['N','E','S','W'];
+  
+  // Start at a random edge cell
+  var edge=Math.floor(Math.random()*4);
+  var r,c;
+  if(edge===0){r=0;c=Math.floor(Math.random()*GRID);} // top
+  else if(edge===1){r=Math.floor(Math.random()*GRID);c=GRID-1;} // right
+  else if(edge===2){r=GRID-1;c=Math.floor(Math.random()*GRID);} // bottom
+  else{r=Math.floor(Math.random()*GRID);c=0;} // left
+  
+  // Determine entry direction
+  var enterDir=edge;
+  var exitDir;
+  var path=[[r,c]];
+  var used={};
+  used[r+','+c]=true;
+  
+  // Random walk to find a path to another edge
+  var maxSteps=GRID*GRID;
+  var stuck=0;
+  for(var step=0;step<maxSteps;step++){
+    // Get available directions
+    var avail=[];
+    for(var di=0;di<4;di++){
+      var nr=r+dirs[di][0],nc=c+dirs[di][1];
+      if(nr<0||nr>=GRID||nc<0||nc>=GRID)continue;
+      if(used[nr+','+nc])continue;
+      avail.push(di);
+    }
+    
+    if(avail.length===0){stuck++;break;}
+    
+    // Pick a direction (prefer continuing forward)
+    var chosen=avail[Math.floor(Math.random()*avail.length)];
+    // Bias toward continuing straight
+    if(avail.indexOf(enterDir)>=0&&Math.random()<0.4)chosen=enterDir;
+    // Bias toward edge exit
+    for(var ai=0;ai<avail.length;ai++){
+      var nr=r+dirs[avail[ai]][0],nc=c+dirs[avail[ai]][1];
+      if(nr===0||nr===GRID-1||nc===0||nc===GRID-1){
+        if(Math.random()<0.3){chosen=avail[ai];break;}
+      }
+    }
+    
+    r+=dirs[chosen][0];
+    c+=dirs[chosen][1];
+    path.push([r,c]);
+    used[r+','+c]=true;
+    enterDir=(chosen+2)%4;
+    
+    // Check if we reached an edge (and it's not the starting edge's opposite corner logic)
+    if(r===0||r===GRID-1||c===0||c===GRID-1){
+      if(path.length>=4){ // minimum path length
+        exitDir=chosen;
+        break;
+      }
+    }
+  }
+  
+  if(path.length<4){ // Fallback: generate a simple path
+    return generateSimplePath();
+  }
+  
+  // Build road pieces from the path
+  var roadGrid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
+  var roadData={};
+  var romanPositions=[];
+  
+  for(var i=0;i<path.length;i++){
+    var pr=path[i][0],pc=path[i][1];
+    var conn=[0,0,0,0];
+    
+    if(i>0){
+      var dir=path[i][0]-path[i-1][0];
+      if(dir===1)conn[2]=1; // S
+      if(dir===-1)conn[0]=1; // N
+      dir=path[i][1]-path[i-1][1];
+      if(dir===1)conn[1]=1; // E
+      if(dir===-1)conn[3]=1; // W
+    }
+    if(i<path.length-1){
+      var dir=path[i+1][0]-path[i][0];
+      if(dir===1)conn[2]=1;
+      if(dir===-1)conn[0]=1;
+      dir=path[i+1][1]-path[i][1];
+      if(dir===1)conn[1]=1;
+      if(dir===-1)conn[3]=1;
+    }
+    
+    // Determine piece type from connections
+    var type=0;
+    if(conn[0]&&conn[2])type=1; // NS
+    else if(conn[1]&&conn[3])type=2; // EW
+    else if(conn[0]&&conn[1])type=3; // NE └
+    else if(conn[1]&&conn[2])type=4; // SE ┌
+    else if(conn[2]&&conn[3])type=5; // SW ┐
+    else if(conn[0]&&conn[3])type=6; // NW ┘
+    
+    roadGrid[pr][pc]=type;
+    
+    // Place Romans on curves (not on entry/exit)
+    if([3,4,5,6].indexOf(type)>=0 && i>0 && i<path.length-1 && Math.random()<0.6){
+      romanPositions.push([pr,pc]);
+    }
+  }
+  
+  return {grid:roadGrid,path:path,entry:path[0],exit:path[path.length-1],romans:romanPositions};
+}
+
+function generateSimplePath(){
+  var grid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
+  var path=[[0,2],[1,2],[2,2],[3,2],[4,2]];
+  grid[0][2]=1;grid[1][2]=1;grid[2][2]=1;grid[3][2]=1;grid[4][2]=1;
+  // Add a curve
+  grid[2][1]=2;
+  path.splice(2,0,[2,1]);
+  return {grid:grid,path:path,entry:[0,2],exit:[4,2],romans:[[1,2]]};
+}
+
+// ========== GAME STATE ==========
+var level=1,score=0,missingCount=1;
+var roadGrid,roadPath,entryCell,exitCell,romanCells;
+var missingPositions=[],currentAnswers=[];
+var isWaiting=false,audioInit=false;
+
+function initAudio(){if(audioInit)return;audioInit=true;try{new AudioContext()}catch(e){}}
+
+function speak(t){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(t);
+  u.lang='pt-PT';u.rate=0.85;
+  window.speechSynthesis.speak(u);
+}
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function startGame(){
+  initAudio();
+  document.getElementById('startOverlay').classList.add('hidden');
+  level=1;score=0;
+  document.getElementById('scoreDisplay').textContent='0 ⭐';
+  buildLevel();
+}
+
+function buildLevel(){
+  missingCount=Math.min(1+Math.floor(level/2),4);
+  document.getElementById('levelDisplay').textContent='Nível '+level;
+  
+  var roadData=generateRoad();
+  roadGrid=roadData.grid;
+  roadPath=roadData.path;
+  entryCell=roadData.entry;
+  exitCell=roadData.exit;
+  romanCells=roadData.romans;
+  
+  // Pick missing positions from road cells (non-entry, non-exit)
+  var candidates=[];
+  for(var i=1;i<roadPath.length-1;i++){
+    candidates.push({r:roadPath[i][0],c:roadPath[i][1]});
+  }
+  shuffle(candidates);
+  missingPositions=candidates.slice(0,Math.min(missingCount,candidates.length));
+  
+  // Store correct answer types
+  currentAnswers=[];
+  missingPositions.forEach(function(pos){
+    currentAnswers.push(roadGrid[pos.r][pos.c]);
+  });
+  
+  renderGrid();
+  renderChoices();
+}
+
+function renderGrid(){
+  var g=document.getElementById('grid');
+  g.innerHTML='';
+  var cellW=Math.floor(100/GRID);
+  
+  for(var r=0;r<GRID;r++){
+    for(var c=0;c<GRID;c++){
+      var card=document.createElement('div');
+      card.className='card';
+      card.dataset.r=r;card.dataset.c=c;
+      
+      var isMissing=missingPositions.some(function(p){return p.r===r&&p.c===c});
+      var isEntry=r===entryCell[0]&&c===entryCell[1];
+      var isExit=r===exitCell[0]&&c===exitCell[1];
+      
+      if(isMissing){
+        card.className+=' missing';
+        card.innerHTML='<div class="qmark">?</div>';
+      }else if(roadGrid[r][c]>0){
+        card.className+=' road';
+        var hasRoman=romanCells.some(function(p){return p[0]===r&&p[1]===c});
+        card.innerHTML=getPieceSVG(roadGrid[r][c],100,100,hasRoman);
+        if(isEntry){
+          var icon=document.createElement('img');
+          icon.className='char-icon';
+          icon.src=CHARS.obelix;
+          icon.style.cssText='position:absolute;left:2px;top:2px;width:clamp(14px,3.5vw,26px);height:clamp(14px,3.5vw,26px);z-index:2';
+          card.appendChild(icon);
+        }
+        if(isExit){
+          var icon=document.createElement('img');
+          icon.className='char-icon';
+          icon.src=Math.random()<0.5?CHARS.boar:SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)].img;
+          icon.style.cssText='position:absolute;right:2px;bottom:2px;width:clamp(14px,3.5vw,26px);height:clamp(14px,3.5vw,26px);z-index:2';
+          card.appendChild(icon);
+        }
+      }else{
+        card.className+=' forest';
+        // Decorative forest elements
+        if(Math.random()<0.3){
+          card.innerHTML='<div style="font-size:clamp(8px,2vw,14px);position:absolute;bottom:2px;right:2px;opacity:0.3">'+
+            ['🌲','🌳','🌿','🍄'][Math.floor(Math.random()*4)]+'</div>';
+        }
+      }
+      
+      g.appendChild(card);
+    }
+  }
+}
+
+function exitCellType(){
+  var types=roadGrid[exitCell[0]][exitCell[1]];
+  var hasRoman=romanCells.some(function(p){return p[0]===exitCell[0]&&p[1]===exitCell[1]});
+  return {type:types,hasRoman:hasRoman};
+}
+
+function renderChoices(){
+  var cd=document.getElementById('choices');
+  cd.innerHTML='';
+  
+  // Generate 4 choices: 1 correct + 3 wrong
+  var choices=[];
+  // Find the correct types
+  var correctTypes=currentAnswers.slice(); // copy
+  
+  // Add distractors
+  var allTypes=[1,2,3,4,5,6];
+  correctTypes.forEach(function(t){choices.push(t);});
+  
+  // Fill remaining with random types that won't fit the missing positions
+  while(choices.length<4){
+    var rt=allTypes[Math.floor(Math.random()*allTypes.length)];
+    // Avoid giving the correct answer as extra option (since it's already there)
+    if(choices.indexOf(rt)>=0 && choices.filter(function(x){return x===rt}).length>=2)continue;
+    choices.push(rt);
+  }
+  shuffle(choices);
+  
+  choices.forEach(function(type,idx){
+    var btn=document.createElement('div');
+    btn.className='choice-btn';
+    btn.dataset.type=type;
+    btn.innerHTML=getPieceSVG(type,100,100,getRomanFromType(type));
+    
+    btn.addEventListener('click',function(){
+      if(isWaiting)return;
+      checkChoice(this,parseInt(this.dataset.type));
+    });
+    cd.appendChild(btn);
+  });
+}
+
+function checkChoice(el,type){
+  isWaiting=true;
+  
+  // Find next missing position
+  var nextIdx=0;
+  for(var i=0;i<missingPositions.length;i++){
+    var pos=missingPositions[i];
+    if(roadGrid[pos.r][pos.c]===0){
+      nextIdx=i;
+      break;
+    }
+  }
+  
+  var correctType=currentAnswers[nextIdx];
+  
+  if(type===correctType){
+    el.classList.add('correct');
+    var pos=missingPositions[nextIdx];
+    roadGrid[pos.r][pos.c]=type;
+    
+    // Re-render that card
+    var cards=document.querySelectorAll('.card');
+    var cardIdx=pos.r*GRID+pos.c;
+    var card=cards[cardIdx];
+    if(card){
+      card.className='card road filled';
+      var hasRoman=romanCells.some(function(p){return p[0]===pos.r&&p[1]===pos.c});
+      card.innerHTML=getPieceSVG(type,100,100,hasRoman);
+    }
+    
+    document.getElementById('feedback').textContent='✅ Correto!';
+    document.getElementById('feedback').className='feedback ok';
+    score++;
+    document.getElementById('scoreDisplay').textContent=score+' ⭐';
+    
+    // Check if all missing filled
+    var allFilled=missingPositions.every(function(p){return roadGrid[p.r][p.c]>0});
+    if(allFilled){
+      setTimeout(showVictory,800);
+    }else{
+      setTimeout(function(){isWaiting=false;},600);
+    }
+  }else{
+    el.classList.add('wrong');
+    document.getElementById('feedback').textContent='❌ Não encaixa!';
+    document.getElementById('feedback').className='feedback fail';
+    setTimeout(function(){
+      el.classList.remove('wrong');
+      isWaiting=false;
+    },700);
+  }
+}
+
+function showVictory(){
+  var rewardChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
+  var isBoar=Math.random()<0.4;
+  
+  var overlay=document.getElementById('winOverlay');
+  document.getElementById('winTitle').textContent='🏆 Vitória!';
+  
+  if(isBoar){
+    document.getElementById('winSub').textContent='Obelix encontrou o javali assado! 🐗';
+    document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img">';
+    speak('Obelix encontrou o javali!');
+  }else{
+    document.getElementById('winSub').textContent='Salvaste o '+rewardChar.name+'! 🎉';
+    document.getElementById('winReward').innerHTML='<img src="'+rewardChar.img+'" class="reward-img">';
+    speak('Salvaste o '+rewardChar.name+'!');
+  }
+  
+  overlay.classList.add('active');
+  isWaiting=false;
+}
+
+function nextLevel(){
+  document.getElementById('winOverlay').classList.remove('active');
+  level++;
+  buildLevel();
+}
+
+function restartGame(){
+  document.getElementById('winOverlay').classList.remove('active');
+  startGame();
+}
+</script>
+</body>
+</html>
