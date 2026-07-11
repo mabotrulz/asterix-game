@@ -104,6 +104,18 @@ const CHARS={
   dogmatix:'assets/dogmatix.png',
 };
 
+const FOREST_CARDS=['cards/forest_tree.png','cards/forest_house.png','cards/forest_pond.png'];
+
+function cardSrc(r,c,type){
+  if(type===0){
+    var key=r+','+c;
+    if(!window._fc)window._fc={};
+    if(!window._fc[key])window._fc[key]=FOREST_CARDS[Math.floor(Math.random()*FOREST_CARDS.length)];
+    return window._fc[key];
+  }
+  return 'cards/road_'+type+'.png';
+}
+
 const SAVE_CHARS=[
   {name:'Asterix',img:'assets/asterix.png'},
   {name:'Getafix',img:'assets/getafix.png'},
@@ -415,8 +427,18 @@ function renderGrid(){
         card.innerHTML='<div class="qmark">?</div>';
       }else if(roadGrid[r][c]>0){
         card.className+=' road';
+        var img=document.createElement('img');
+        img.src=cardSrc(r,c,roadGrid[r][c]);
+        img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+        card.appendChild(img);
+        // Romans on curve cards
         var hasRoman=romanCells.some(function(p){return p[0]===r&&p[1]===c});
-        card.innerHTML=getPieceSVG(roadGrid[r][c],100,100,hasRoman);
+        if(hasRoman){
+          var rom=document.createElement('img');
+          rom.src=CHARS.roman;
+          rom.style.cssText='position:absolute;bottom:clamp(4px,1vw,8px);right:clamp(2px,0.5vw,5px);width:clamp(14px,3.5vw,28px);height:clamp(14px,3.5vw,28px);z-index:2;object-fit:contain;opacity:0.9';
+          card.appendChild(rom);
+        }
         if(isEntry){
           var icon=document.createElement('img');
           icon.className='char-icon';
@@ -433,6 +455,10 @@ function renderGrid(){
         }
       }else{
         card.className+=' forest';
+        var fimg=document.createElement('img');
+        fimg.src=cardSrc(r,c,0);
+        fimg.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+        card.appendChild(fimg);
       }
       
       g.appendChild(card);
@@ -472,7 +498,10 @@ function renderChoices(){
     var btn=document.createElement('div');
     btn.className='choice-btn';
     btn.dataset.type=type;
-    btn.innerHTML=getPieceSVG(type,100,100,getRomanFromType(type));
+    var cimg=document.createElement('img');
+    cimg.src='cards/road_'+type+'.png';
+    cimg.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+    btn.appendChild(cimg);
     
     btn.addEventListener('click',function(){
       if(isWaiting)return;
