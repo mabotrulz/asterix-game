@@ -22,8 +22,7 @@ body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;display:flex;justify-c
 .card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,30px);color:#f1c40f;font-weight:700}
 .card.filled{border-color:#4ecca3;animation:popIn 0.3s ease}
 .card svg{width:100%;height:100%;display:block}
-.char-icon{position:absolute;width:clamp(20px,5vw,36px);height:clamp(20px,5vw,36px);object-fit:contain;pointer-events:none;z-index:2;image-rendering:pixelated}
-.roman-icon,.char-icon{position:absolute;width:clamp(12px,3vw,22px);height:clamp(12px,3vw,22px);object-fit:contain;pointer-events:none}
+.char-icon{position:absolute;width:clamp(20px,5vw,36px);height:clamp(20px,5vw,36px);object-fit:contain;pointer-events:none;z-index:2}
 @keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
 
 .choices{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(4px,1vw,8px);padding:4px 10px 8px;flex-shrink:0}
@@ -435,11 +434,6 @@ function renderGrid(){
         }
       }else{
         card.className+=' forest';
-        // Decorative forest elements
-        if(Math.random()<0.3){
-          card.innerHTML='<div style="font-size:clamp(8px,2vw,14px);position:absolute;bottom:2px;right:2px;opacity:0.3">'+
-            ['🌲','🌳','🌿','🍄'][Math.floor(Math.random()*4)]+'</div>';
-        }
       }
       
       g.appendChild(card);
