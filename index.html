@@ -377,15 +377,15 @@ function buildLevel(){
   shuffle(candidates);
   missingPositions=candidates.slice(0,Math.min(missingCount,candidates.length));
   
-  // Clear roadGrid at missing positions so allFilled check works
-  missingPositions.forEach(function(pos){
-    roadGrid[pos.r][pos.c]=0;
-  });
-  
-  // Store correct answer types
+  // Store correct answer types BEFORE resetting
   currentAnswers=[];
   missingPositions.forEach(function(pos){
     currentAnswers.push(roadGrid[pos.r][pos.c]);
+  });
+  
+  // Clear roadGrid at missing positions so allFilled check works
+  missingPositions.forEach(function(pos){
+    roadGrid[pos.r][pos.c]=0;
   });
   
   renderGrid();
