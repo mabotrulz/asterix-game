@@ -133,11 +133,7 @@ function getPieceSVG(type, w, h, hasRoman){
     6:`M${cx-r},${cy} L${cx},${cy} L${cx},${cy-r}`,
   };
   var d=paths[type]||'';
-  return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">'+
-    '<line x1="'+(cx-r-2)+'" y1="'+cy+'" x2="'+(cx+r+2)+'" y2="'+cy+
-    '" stroke="#6a7a3a" stroke-width="'+(r*0.15)+'" opacity="0.4" stroke-dasharray="4,4"/>'+
-    '<line x1="'+cx+'" y1="'+(cy-r-2)+'" x2="'+cx+'" y2="'+(cy+r+2)+
-    '" stroke="#6a7a3a" stroke-width="'+(r*0.15)+'" opacity="0.4" stroke-dasharray="4,4"/>'+
+  return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%;pointer-events:none">'+
     '<path d="'+d+'" stroke="#c8a85e" stroke-width="'+(r*0.4)+'" fill="none" stroke-linecap="round"/>'+
     (hasRoman ? '<image href="'+CHARS.roman+'" x="'+(cx-r*0.5)+'" y="'+(cy-r*0.5)+'" width="'+(r*0.9)+'" height="'+(r*0.9)+'" opacity="0.8"/>' : '')+
     '</svg>';
