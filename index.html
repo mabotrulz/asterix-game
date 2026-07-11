@@ -151,111 +151,117 @@ function getRomanFromType(type){
 
 // ========== ROAD GENERATION ==========
 function generateRoad(){
-  // Generate a continuous path from one edge to another
+  // Generate a continuous path from one edge to another using a snake-like pattern
   var grid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
   var dirs=[[-1,0],[0,1],[1,0],[0,-1]]; // N,E,S,W
-  var dirNames=['N','E','S','W'];
   
-  // Start at a random edge cell
-  var edge=Math.floor(Math.random()*4);
-  var r,c;
-  if(edge===0){r=0;c=Math.floor(Math.random()*GRID);} // top
-  else if(edge===1){r=Math.floor(Math.random()*GRID);c=GRID-1;} // right
-  else if(edge===2){r=GRID-1;c=Math.floor(Math.random()*GRID);} // bottom
-  else{r=Math.floor(Math.random()*GRID);c=0;} // left
+  // Pick entry edge (0=N,1=E,2=S,3=W) and exit edge (must be different)
+  var entryEdge=Math.floor(Math.random()*4);
+  var exitEdge;
+  do{exitEdge=Math.floor(Math.random()*4);}while(exitEdge===entryEdge);
   
-  // Determine entry direction
-  var enterDir=edge;
-  var exitDir;
-  var path=[[r,c]];
+  var cr,cc;
+  if(entryEdge===0){cr=0;cc=Math.floor(Math.random()*GRID);}
+  else if(entryEdge===1){cr=Math.floor(Math.random()*GRID);cc=GRID-1;}
+  else if(entryEdge===2){cr=GRID-1;cc=Math.floor(Math.random()*GRID);}
+  else{cr=Math.floor(Math.random()*GRID);cc=0;}
+  
+  var path=[[cr,cc]];
   var used={};
-  used[r+','+c]=true;
+  used[cr+','+cc]=true;
   
-  // Random walk to find a path to another edge
-  var maxSteps=GRID*GRID;
-  var stuck=0;
-  for(var step=0;step<maxSteps;step++){
-    // Get available directions
-    var avail=[];
-    for(var di=0;di<4;di++){
-      var nr=r+dirs[di][0],nc=c+dirs[di][1];
-      if(nr<0||nr>=GRID||nc<0||nc>=GRID)continue;
-      if(used[nr+','+nc])continue;
-      avail.push(di);
-    }
+  // Determine primary direction based on entry/exit
+  var primaryDir;
+  if(entryEdge===0)primaryDir=2; // S
+  else if(entryEdge===1)primaryDir=3; // W
+  else if(entryEdge===2)primaryDir=0; // N
+  else primaryDir=1; // E
+  
+  // Build path by moving in primary direction with occasional turns
+  var turnCounter=0;
+  var maxSeg=GRID*GRID;
+  for(var i=0;i<maxSeg;i++){
+    var nr=cr+dirs[primaryDir][0];
+    var nc=cc+dirs[primaryDir][1];
     
-    if(avail.length===0){stuck++;break;}
-    
-    // Pick a direction (prefer continuing forward)
-    var chosen=avail[Math.floor(Math.random()*avail.length)];
-    // Bias toward continuing straight
-    if(avail.indexOf(enterDir)>=0&&Math.random()<0.4)chosen=enterDir;
-    // Bias toward edge exit
-    for(var ai=0;ai<avail.length;ai++){
-      var nr=r+dirs[avail[ai]][0],nc=c+dirs[avail[ai]][1];
-      if(nr===0||nr===GRID-1||nc===0||nc===GRID-1){
-        if(Math.random()<0.3){chosen=avail[ai];break;}
+    // If at edge or used, try a turn
+    if(nr<0||nr>=GRID||nc<0||nc>=GRID||used[nr+','+nc]){
+      // Try turning left or right
+      var turnDirs=[(primaryDir+1)%4,(primaryDir+3)%4,(primaryDir+2)%4];
+      var turned=false;
+      for(var t=0;t<turnDirs.length;t++){
+        var td=turnDirs[t];
+        nr=cr+dirs[td][0];
+        nc=cc+dirs[td][1];
+        if(nr>=0&&nr<GRID&&nc>=0&&nc<GRID&&!used[nr+','+nc]){
+          primaryDir=td;
+          turned=true;
+          break;
+        }
       }
+      if(!turned)break; // stuck
     }
     
-    r+=dirs[chosen][0];
-    c+=dirs[chosen][1];
-    path.push([r,c]);
-    used[r+','+c]=true;
-    enterDir=(chosen+2)%4;
+    cr=nr;cc=nc;
+    path.push([cr,cc]);
+    used[cr+','+cc]=true;
     
-    // Check if we reached an edge (and it's not the starting edge's opposite corner logic)
-    if(r===0||r===GRID-1||c===0||c===GRID-1){
-      if(path.length>=4){ // minimum path length
-        exitDir=chosen;
-        break;
-      }
-    }
+    // Check if reached exit edge
+    var atEdge=false;
+    if(exitEdge===0&&cr===0)atEdge=true;
+    else if(exitEdge===1&&cc===GRID-1)atEdge=true;
+    else if(exitEdge===2&&cr===GRID-1)atEdge=true;
+    else if(exitEdge===3&&cc===0)atEdge=true;
+    
+    if(atEdge&&path.length>=5){break;}
   }
   
-  if(path.length<4){ // Fallback: generate a simple path
-    return generateSimplePath();
+  // Fallback: if path too short, use a guaranteed zigzag
+  if(path.length<5){
+    return generateFallbackPath(entryEdge,exitEdge);
   }
   
-  // Build road pieces from the path
+  // Set road piece types based on connections
   var roadGrid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
-  var roadData={};
   var romanPositions=[];
   
   for(var i=0;i<path.length;i++){
     var pr=path[i][0],pc=path[i][1];
-    var conn=[0,0,0,0];
+    var conn=[0,0,0,0]; // N,E,S,W
     
     if(i>0){
-      var dir=path[i][0]-path[i-1][0];
-      if(dir===1)conn[2]=1; // S
-      if(dir===-1)conn[0]=1; // N
-      dir=path[i][1]-path[i-1][1];
-      if(dir===1)conn[1]=1; // E
-      if(dir===-1)conn[3]=1; // W
+      var dr=path[i][0]-path[i-1][0];
+      if(dr===1)conn[2]=1;
+      if(dr===-1)conn[0]=1;
+      var dc=path[i][1]-path[i-1][1];
+      if(dc===1)conn[1]=1;
+      if(dc===-1)conn[3]=1;
     }
     if(i<path.length-1){
-      var dir=path[i+1][0]-path[i][0];
-      if(dir===1)conn[2]=1;
-      if(dir===-1)conn[0]=1;
-      dir=path[i+1][1]-path[i][1];
-      if(dir===1)conn[1]=1;
-      if(dir===-1)conn[3]=1;
+      var dr=path[i+1][0]-path[i][0];
+      if(dr===1)conn[2]=1;
+      if(dr===-1)conn[0]=1;
+      var dc=path[i+1][1]-path[i][1];
+      if(dc===1)conn[1]=1;
+      if(dc===-1)conn[3]=1;
     }
     
-    // Determine piece type from connections
     var type=0;
-    if(conn[0]&&conn[2])type=1; // NS
-    else if(conn[1]&&conn[3])type=2; // EW
-    else if(conn[0]&&conn[1])type=3; // NE └
-    else if(conn[1]&&conn[2])type=4; // SE ┌
-    else if(conn[2]&&conn[3])type=5; // SW ┐
-    else if(conn[0]&&conn[3])type=6; // NW ┘
+    if(conn[0]&&conn[2])type=1;
+    else if(conn[1]&&conn[3])type=2;
+    else if(conn[0]&&conn[1])type=3;
+    else if(conn[1]&&conn[2])type=4;
+    else if(conn[2]&&conn[3])type=5;
+    else if(conn[0]&&conn[3])type=6;
+    else if(conn[0])type=1; // dead end N
+    else if(conn[2])type=1; // dead end S
+    else if(conn[1])type=2; // dead end E
+    else if(conn[3])type=2; // dead end W
     
     roadGrid[pr][pc]=type;
     
     // Place Romans on curves (not on entry/exit)
-    if([3,4,5,6].indexOf(type)>=0 && i>0 && i<path.length-1 && Math.random()<0.6){
+    if([3,4,5,6].indexOf(type)>=0 && i>0 && i<path.length-1 && Math.random()<0.5){
       romanPositions.push([pr,pc]);
     }
   }
@@ -263,14 +269,73 @@ function generateRoad(){
   return {grid:roadGrid,path:path,entry:path[0],exit:path[path.length-1],romans:romanPositions};
 }
 
-function generateSimplePath(){
+function generateFallbackPath(entryEdge,exitEdge){
   var grid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
-  var path=[[0,2],[1,2],[2,2],[3,2],[4,2]];
-  grid[0][2]=1;grid[1][2]=1;grid[2][2]=1;grid[3][2]=1;grid[4][2]=1;
-  // Add a curve
-  grid[2][1]=2;
-  path.splice(2,0,[2,1]);
-  return {grid:grid,path:path,entry:[0,2],exit:[4,2],romans:[[1,2]]};
+  var path=[];
+  
+  // Simple snake: go from entry column, zigzag through middle
+  var cStart=Math.floor(GRID/2);
+  var r=0, c=cStart;
+  
+  if(entryEdge===0)r=0;
+  else if(entryEdge===2)r=GRID-1;
+  if(entryEdge===1)c=GRID-1;
+  else if(entryEdge===3)c=0;
+  
+  path.push([r,c]);
+  
+  // Go to the middle
+  var targetR=Math.floor(GRID/2);
+  while(r!==targetR){
+    r+=r<targetR?1:-1;
+    path.push([r,c]);
+  }
+  // Go across
+  var targetC=GRID-1-c;
+  while(c!==targetC){
+    c+=c<targetC?1:-1;
+    path.push([r,c]);
+  }
+  // Go to exit edge
+  if(exitEdge===0){while(r>0){r--;path.push([r,c]);}}
+  else if(exitEdge===2){while(r<GRID-1){r++;path.push([r,c]);}}
+  else if(exitEdge===1){while(c<GRID-1){c++;path.push([r,c]);}}
+  else{while(c>0){c--;path.push([r,c]);}}
+  
+  // Set types
+  var romanPos=[];
+  for(var i=0;i<path.length;i++){
+    var pr=path[i][0],pc=path[i][1];
+    var conn=[0,0,0,0];
+    if(i>0){
+      var dr=path[i][0]-path[i-1][0];
+      if(dr===1)conn[2]=1;if(dr===-1)conn[0]=1;
+      var dc=path[i][1]-path[i-1][1];
+      if(dc===1)conn[1]=1;if(dc===-1)conn[3]=1;
+    }
+    if(i<path.length-1){
+      var dr=path[i+1][0]-path[i][0];
+      if(dr===1)conn[2]=1;if(dr===-1)conn[0]=1;
+      var dc=path[i+1][1]-path[i][1];
+      if(dc===1)conn[1]=1;if(dc===-1)conn[3]=1;
+    }
+    var type=0;
+    if(conn[0]&&conn[2])type=1;
+    else if(conn[1]&&conn[3])type=2;
+    else if(conn[0]&&conn[1])type=3;
+    else if(conn[1]&&conn[2])type=4;
+    else if(conn[2]&&conn[3])type=5;
+    else if(conn[0]&&conn[3])type=6;
+    else if(conn[0]||conn[2])type=1;
+    else if(conn[1]||conn[3])type=2;
+    
+    grid[pr][pc]=type;
+    if([3,4,5,6].indexOf(type)>=0&&i>0&&i<path.length-1&&Math.random()<0.5){
+      romanPos.push([pr,pc]);
+    }
+  }
+  
+  return {grid:grid,path:path,entry:path[0],exit:path[path.length-1],romans:romanPos};
 }
 
 // ========== GAME STATE ==========
