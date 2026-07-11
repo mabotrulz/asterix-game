@@ -225,19 +225,19 @@ function generateRoad(){
     
     if(i>0){
       var dr=path[i][0]-path[i-1][0];
-      if(dr===1)conn[2]=1;
-      if(dr===-1)conn[0]=1;
+      if(dr===1)conn[0]=1; // previous is NORTH → connect NORTH
+      if(dr===-1)conn[2]=1; // previous is SOUTH → connect SOUTH
       var dc=path[i][1]-path[i-1][1];
-      if(dc===1)conn[1]=1;
-      if(dc===-1)conn[3]=1;
+      if(dc===1)conn[3]=1; // previous is LEFT/WEST → connect WEST
+      if(dc===-1)conn[1]=1; // previous is RIGHT/EAST → connect EAST
     }
     if(i<path.length-1){
       var dr=path[i+1][0]-path[i][0];
-      if(dr===1)conn[2]=1;
-      if(dr===-1)conn[0]=1;
+      if(dr===1)conn[2]=1; // next is SOUTH → connect SOUTH
+      if(dr===-1)conn[0]=1; // next is NORTH → connect NORTH
       var dc=path[i+1][1]-path[i][1];
-      if(dc===1)conn[1]=1;
-      if(dc===-1)conn[3]=1;
+      if(dc===1)conn[1]=1; // next is EAST → connect EAST
+      if(dc===-1)conn[3]=1; // next is WEST → connect WEST
     }
     
     var type=0;
@@ -303,9 +303,9 @@ function generateFallbackPath(entryEdge,exitEdge){
     var conn=[0,0,0,0];
     if(i>0){
       var dr=path[i][0]-path[i-1][0];
-      if(dr===1)conn[2]=1;if(dr===-1)conn[0]=1;
+      if(dr===1)conn[0]=1;if(dr===-1)conn[2]=1; // previous N/S → connect N/S
       var dc=path[i][1]-path[i-1][1];
-      if(dc===1)conn[1]=1;if(dc===-1)conn[3]=1;
+      if(dc===1)conn[3]=1;if(dc===-1)conn[1]=1; // previous W/E → connect W/E
     }
     if(i<path.length-1){
       var dr=path[i+1][0]-path[i][0];
