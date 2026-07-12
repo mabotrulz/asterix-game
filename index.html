@@ -745,7 +745,14 @@ function showVictoryOverlay(isBoar,exitSrc){
     document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
     speak('Obelix encontrou o javali!');
   }else{
-    var rChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
+    // Match the actual exit character shown on the card
+    var rChar=SAVE_CHARS[0];
+    for(var si=0;si<SAVE_CHARS.length;si++){
+      if(exitSrc.indexOf(SAVE_CHARS[si].img.split('/').pop())>=0){
+        rChar=SAVE_CHARS[si];
+        break;
+      }
+    }
     document.getElementById('winSub').textContent='Salvaste o '+rChar.name+'! 🎉';
     document.getElementById('winReward').innerHTML='<img src="'+rChar.img+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
     speak('Salvaste o '+rChar.name+'!');
