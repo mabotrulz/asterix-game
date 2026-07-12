@@ -638,10 +638,18 @@ function showVictory(){
   // Obelix walks the path — just move the existing one
   var obelixImg=document.querySelector('.card img[src*="obelix"]');
   if(!obelixImg)return;
-  var origStyle=obelixImg.getAttribute('style')||'';
   var rect=obelixImg.getBoundingClientRect();
-  obelixImg.style.cssText='position:fixed;z-index:100;left:'+rect.left+'px;top:'+rect.top+'px;'+
-    'width:'+rect.width+'px;height:'+rect.height+'px;object-fit:contain;pointer-events:none;transition:all 0.3s ease';
+  // Use rAF to ensure style change is atomic with browser paint
+  requestAnimationFrame(function(){
+    obelixImg.style.cssText='position:fixed;z-index:100;left:'+rect.left+'px;top:'+rect.top+'px;'+
+      'width:'+rect.width+'px;height:'+rect.height+'px;object-fit:contain;pointer-events:none';
+    // No transition yet — add after position is locked
+    requestAnimationFrame(function(){
+      obelixImg.style.transition='all 0.3s ease';
+      obelixImg.style.left=rect.left+'px'; // refresh to trigger transition property
+      obelixImg.style.top=rect.top+'px';
+    });
+  });
   
   var step=0;
   var totalSteps=roadPath.length;
