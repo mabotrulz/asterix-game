@@ -691,24 +691,29 @@ function showVictory(){
       
       // Make Roman fly away
       var flyUp=Math.random()<0.5;
-      if(flyUp){
-        romEl.style.transition='all 1.5s ease';
-        romEl.style.top='-200px';
-        romEl.style.opacity='0';
-      }else{
-        romEl.style.transition='all 0.8s cubic-bezier(0.34,1.56,0.64,1)';
-        romEl.style.width='clamp(120px,30vw,240px)';
-        romEl.style.height='clamp(120px,30vw,240px)';
-        romEl.style.left='50%';
-        romEl.style.top='50%';
-        romEl.style.transform='translate(-50%,-50%)';
-        romEl.style.zIndex='200';
-        setTimeout(function(){
-          romEl.style.transition='all 1.2s ease';
-          romEl.style.top='120%';
+      requestAnimationFrame(function(){
+        if(flyUp){
+          // Fly upward from current position
+          romEl.style.transition='all 0.8s ease';
+          romEl.style.top=(romRect.top-300)+'px';
+          romEl.style.transform='scale(0.3)';
           romEl.style.opacity='0';
-        },500);
-      }
+        }else{
+          // Fly toward screen (grow) then slide down
+          romEl.style.transition='all 0.6s cubic-bezier(0.34,1.56,0.64,1)';
+          var bigW=Math.min(240, Math.max(100, window.innerWidth*0.35));
+          romEl.style.left=((window.innerWidth-bigW)/2)+'px';
+          romEl.style.top=((window.innerHeight-bigW)/2)+'px';
+          romEl.style.width=bigW+'px';
+          romEl.style.height=bigW+'px';
+          // Slide down after a moment
+          setTimeout(function(){
+            romEl.style.transition='all 0.8s ease';
+            romEl.style.top=(window.innerHeight+100)+'px';
+            romEl.style.opacity='0';
+          },600);
+        }
+      });
       
       // Remove Roman after animation
       setTimeout(function(){if(romEl.parentNode)romEl.remove();},2000);
