@@ -21,6 +21,8 @@ body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;display:flex;justify-c
 .card.forest{background:#3d6b3d}
 .card.road{border-color:#8a7a5a}
 .card.missing{border-color:#f1c40f;border-style:dashed;background:rgba(241,196,15,0.08);cursor:pointer}
+@keyframes pulseGlow{0%,100%{border-color:#f1c40f;box-shadow:0 0 5px rgba(241,196,15,0.3)}50%{border-color:#fff7a0;box-shadow:0 0 12px rgba(241,196,15,0.7)}}
+.card.active-missing{animation:pulseGlow 1.2s ease-in-out infinite;border-color:#fff7a0}
 .card.missing:hover{border-color:#4ecca3;transform:scale(1.05)}
 .card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,30px);color:#f1c40f;font-weight:700}
 .card.filled{border-color:#4ecca3;animation:popIn 0.3s ease}
@@ -438,6 +440,10 @@ function renderGrid(){
       
       if(isMissing){
         card.className+=' missing';
+        var isNext=missingPositions[0]&&missingPositions[0].r===r&&missingPositions[0].c===c;
+        if(isNext){
+          card.className+=' active-missing';
+        }
         card.innerHTML='<div class="qmark">?</div>';
       }else if(roadGrid[r][c]>0){
         card.className+=' road';
@@ -551,7 +557,26 @@ function checkChoice(el,type){
     if(card){
       card.className='card road filled';
       var hasRoman=romanCells.some(function(p){return p[0]===pos.r&&p[1]===pos.c});
-      card.innerHTML=getPieceSVG(type,100,100,hasRoman);
+      card.innerHTML='<img src="assets/cards_sliced/GoodGen_'+type+'.png" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none">';
+      if(hasRoman){
+        card.innerHTML+='<img src="'+CHARS.roman+'" style="position:absolute;bottom:clamp(4px,1vw,8px);right:clamp(2px,0.5vw,5px);width:clamp(14px,3.5vw,28px);height:clamp(14px,3.5vw,28px);z-index:2;object-fit:contain;opacity:0.9">';
+      }
+    }
+    
+    // Update active glow to next missing
+    document.querySelectorAll('.card').forEach(function(c){
+      c.classList.remove('active-missing');
+    });
+    // Find next unfilled missing position
+    var nextPos=null;
+    for(var i=0;i<missingPositions.length;i++){
+      var p=missingPositions[i];
+      if(roadGrid[p.r][p.c]===0){nextPos=p;break;}
+    }
+    if(nextPos){
+      var nextCards=document.querySelectorAll('.card');
+      var nextIdx2=nextPos.r*GRID+nextPos.c;
+      if(nextCards[nextIdx2])nextCards[nextIdx2].classList.add('active-missing');
     }
     
     document.getElementById('feedback').textContent='✅ Correto!';
