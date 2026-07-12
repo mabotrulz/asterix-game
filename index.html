@@ -468,7 +468,9 @@ function renderGrid(){
         if(isExit){
           var icon=document.createElement('img');
           icon.className='char-icon';
-          icon.src=Math.random()<0.5?CHARS.boar:SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)].img;
+          var exitChar=Math.random()<0.5?CHARS.boar:SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)].img;
+          window._exitReward=exitChar;
+          icon.src=exitChar;
           icon.style.cssText='position:absolute;right:2px;bottom:2px;width:clamp(56px,14vw,104px);height:clamp(56px,14vw,104px);z-index:2';
           card.appendChild(icon);
         }
@@ -603,9 +605,9 @@ function checkChoice(el,type){
 }
 
 function showVictory(){
-  // Determine the reward at the exit cell
-  var exitType=exitCellType();
-  var isBoar=!exitType.hasRoman&&Math.random()<0.5;
+  // Use the actual exit reward shown on the card
+  var exitSrc=window._exitReward||CHARS.boar;
+  var isBoar=exitSrc.indexOf('boar')>=0;
   
   // Walk animation: highlight road cells one by one to simulate Obelix walking
   var delay=0;
