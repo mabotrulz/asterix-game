@@ -442,12 +442,11 @@ function renderGrid(){
       }else if(roadGrid[r][c]>0){
         card.className+=' road';
         var img=document.createElement('img');
-        img.src=cardSrc(r,c,roadGrid[r][c]);
+        img.src='assets/cards_sliced/road_type_'+roadGrid[r][c]+'.png';
         img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
         card.appendChild(img);
         // Romans on curve cards
-        var hasRoman=romanCells.some(function(p){return p[0]===r&&p[1]===c});
-        if(hasRoman){
+        if(roadGrid[r][c]>=3&&roadGrid[r][c]<=6&&Math.random()<0.4){
           var rom=document.createElement('img');
           rom.src=CHARS.roman;
           rom.style.cssText='position:absolute;bottom:clamp(4px,1vw,8px);right:clamp(2px,0.5vw,5px);width:clamp(14px,3.5vw,28px);height:clamp(14px,3.5vw,28px);z-index:2;object-fit:contain;opacity:0.9';
