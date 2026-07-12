@@ -242,10 +242,21 @@ function generateRoad(){
     if(atEdge&&path.length>=5){break;}
   }
   
-  // Fallback: if path too short, use a guaranteed zigzag
-  if(path.length<5){
+  // Fallback: if path too short or too straight, use a guaranteed zigzag
+  if(path.length<5||path.length<GRID*1.5){
     return generateFallbackPath(entryEdge,exitEdge);
   }
+  
+  // Check for at least 2 turns
+  var turnCount=0;
+  for(var ti=0;ti<path.length-2;ti++){
+    var dr=path[ti+1][0]-path[ti][0];
+    var dc=path[ti+1][1]-path[ti][1];
+    var dr2=path[ti+2][0]-path[ti+1][0];
+    var dc2=path[ti+2][1]-path[ti+1][1];
+    if(dr!==dr2||dc!==dc2)turnCount++;
+  }
+  if(turnCount<2)return generateFallbackPath(entryEdge,exitEdge);
   
   // Set road piece types based on connections
   var roadGrid=Array(GRID).fill().map(()=>Array(GRID).fill(0));
@@ -517,21 +528,14 @@ function renderChoices(){
   var cd=document.getElementById('choices');
   cd.innerHTML='';
   
-  // Generate 4 choices: 1 correct + 3 wrong
-  var choices=[];
-  // Find the correct types
-  var correctTypes=currentAnswers.slice(); // copy
-  
-  // Add distractors
-  var allTypes=[1,2,3,4,5,6];
-  correctTypes.forEach(function(t){choices.push(t);});
-  
-  // Fill remaining with random types that won't fit the missing positions
-  while(choices.length<4){
-    var rt=allTypes[Math.floor(Math.random()*allTypes.length)];
-    // Avoid giving the correct answer as extra option (since it's already there)
-    if(choices.indexOf(rt)>=0 && choices.filter(function(x){return x===rt}).length>=2)continue;
-    choices.push(rt);
+  // Generate 4 different choices
+  var correctType=currentAnswers[0]; // first missing slot's correct type
+  var choices=[correctType];
+  var otherTypes=[1,2,3,4,5,6].filter(function(t){return t!==correctType});
+  shuffle(otherTypes);
+  // Fill with 3 different wrong types
+  for(var ci=0;ci<3&&ci<otherTypes.length;ci++){
+    choices.push(otherTypes[ci]);
   }
   shuffle(choices);
   
