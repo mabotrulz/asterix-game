@@ -452,8 +452,8 @@ function renderGrid(){
         img.src='assets/cards_sliced/GoodGen_'+roadGrid[r][c]+'.png';
         img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
         card.appendChild(img);
-        // Romans on curve cards
-        if(roadGrid[r][c]>=3&&roadGrid[r][c]<=6&&Math.random()<0.4){
+        // Romans on curve cards - guarantee at least one per game
+        if(roadGrid[r][c]>=3&&roadGrid[r][c]<=6&&Math.random()<0.5){
           var rom=document.createElement('img');
           rom.src=CHARS.roman;
           rom.style.cssText='position:absolute;bottom:clamp(10px,2vw,20px);right:clamp(5px,1vw,12px);width:clamp(56px,14vw,112px);height:clamp(56px,14vw,112px);z-index:2;object-fit:contain;opacity:0.9';
@@ -486,7 +486,25 @@ function renderGrid(){
       g.appendChild(card);
     }
   }
-}
+  
+  // Ensure at least one Roman on the path
+  var hasRoman=false;
+  document.querySelectorAll('.card').forEach(function(c){
+    if(c.querySelector('img[src*="roman"]'))hasRoman=true;
+  });
+  if(!hasRoman&&roadPath.length>2){
+    for(var ri=1;ri<roadPath.length-1;ri++){
+      var pos=roadPath[ri];
+      if(roadGrid[pos[0]][pos[1]]>=3){
+        var rc=document.querySelectorAll('.card')[pos[0]*GRID+pos[1]];
+        var rom=document.createElement('img');
+        rom.src=CHARS.roman;
+        rom.style.cssText='position:absolute;bottom:clamp(10px,2vw,20px);right:clamp(5px,1vw,12px);width:clamp(56px,14vw,112px);height:clamp(56px,14vw,112px);z-index:2;object-fit:contain;opacity:0.9';
+        if(rc)rc.appendChild(rom);
+        break;
+      }
+    }
+  }
 
 function exitCellType(){
   var types=roadGrid[exitCell[0]][exitCell[1]];
@@ -606,41 +624,123 @@ function checkChoice(el,type){
 }
 
 function showVictory(){
-  // Use the actual exit reward shown on the card
   var exitSrc=window._exitReward||CHARS.boar;
   var isBoar=exitSrc.indexOf('boar')>=0;
   
-  // Walk animation: highlight road cells one by one to simulate Obelix walking
-  var delay=0;
-  roadPath.forEach(function(pos,idx){
-    if(idx===0)return; // skip start (Obelix is already there)
-    delay+=150;
-    setTimeout(function(){
-      var card=document.querySelectorAll('.card')[pos[0]*GRID+pos[1]];
-      if(card)card.style.boxShadow='inset 0 0 15px rgba(241,196,15,0.5)';
-    },delay);
+  // Collect Roman positions on the path
+  var romanPositions=[];
+  roadPath.forEach(function(pos){
+    var card=document.querySelectorAll('.card')[pos[0]*GRID+pos[1]];
+    if(card&&card.querySelector('img[src*="roman"]'))romanPositions.push(pos);
   });
   
-  // Victory overlay after walk
-  var walkTime=roadPath.length*150+500;
-  setTimeout(function(){
-    var overlay=document.getElementById('winOverlay');
-    document.getElementById('winTitle').textContent='🏆 Vitória!';
-    
-    if(isBoar){
-      document.getElementById('winSub').textContent='Obelix encontrou o javali assado! 🐗';
-      document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
-      speak('Obelix encontrou o javali!');
-    }else{
-      var rChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
-      document.getElementById('winSub').textContent='Salvaste o '+rChar.name+'! 🎉';
-      document.getElementById('winReward').innerHTML='<img src="'+rChar.img+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
-      speak('Salvaste o '+rChar.name+'!');
+  // Obelix walks the path
+  var obelixImg=document.createElement('img');
+  obelixImg.src=CHARS.obelix;
+  obelixImg.style.cssText='position:fixed;width:clamp(40px,10vw,80px);height:'+
+    'clamp(40px,10vw,80px);z-index:100;transition:all 0.4s ease;object-fit:contain;'+
+    'pointer-events:none;transform:scaleX(1)';
+  document.body.appendChild(obelixImg);
+  
+  // Start at first cell
+  var first=roadPath[0];
+  var firstCard=document.querySelectorAll('.card')[first[0]*GRID+first[1]];
+  if(firstCard){
+    var r=firstCard.getBoundingClientRect();
+    obelixImg.style.left=(r.left+r.width/2-30)+'px';
+    obelixImg.style.top=(r.top+r.height/2-30)+'px';
+    obelixImg.style.opacity='0';
+  }
+  
+  var step=0;
+  var totalSteps=roadPath.length;
+  
+  function walkStep(){
+    if(step>=totalSteps){
+      // Walk done - show victory
+      obelixImg.style.transition='all 1s ease';
+      obelixImg.style.opacity='0';
+      setTimeout(function(){
+        obelixImg.remove();
+        showVictoryOverlay(isBoar,exitSrc);
+      },1000);
+      return;
     }
     
-    overlay.classList.add('active');
-    isWaiting=false;
-  },walkTime);
+    var pos=roadPath[step];
+    var card=document.querySelectorAll('.card')[pos[0]*GRID+pos[1]];
+    if(!card){step++;setTimeout(walkStep,50);return;}
+    
+    var r=card.getBoundingClientRect();
+    obelixImg.style.opacity='1';
+    obelixImg.style.left=(r.left+r.width/2-30)+'px';
+    obelixImg.style.top=(r.top+r.height/2-30)+'px';
+    
+    // Check for Roman on this card
+    var romEl=card.querySelector('img[src*="roman"]');
+    if(romEl){
+      var isOuch=Math.random()<0.5;
+      playSound('assets/'+(isOuch?'roman_ouch.wav':'roman_ui.wav'));
+      
+      // Make Roman fly away
+      var flyUp=Math.random()<0.5;
+      if(flyUp){
+        romEl.style.transition='all 1.5s ease';
+        romEl.style.transform='translateY(-200px) scale(0.3)';
+        romEl.style.opacity='0';
+      }else{
+        romEl.style.transition='all 0.8s cubic-bezier(0.34,1.56,0.64,1)';
+        romEl.style.transform='translate(-50%,-50%) scale(4)';
+        romEl.style.left='50%';
+        romEl.style.top='50%';
+        romEl.style.width='clamp(80px,20vw,160px)';
+        romEl.style.height='clamp(80px,20vw,160px)';
+        romEl.style.zIndex='200';
+        setTimeout(function(){
+          romEl.style.transition='all 1.2s ease';
+          romEl.style.transform='translateY(200px) scale(0.5)';
+          romEl.style.opacity='0';
+        },500);
+      }
+      
+      // Remove Roman after animation
+      setTimeout(function(){if(romEl.parentNode)romEl.remove();},2000);
+    }
+    
+    step++;
+    var delay=roadPath[step]?250:400;
+    setTimeout(walkStep,delay);
+  }
+  
+  // Start walking after a brief delay
+  setTimeout(function(){obelixImg.style.opacity='1';walkStep();},300);
+}
+
+function playSound(src){
+  try{
+    var a=new Audio(src);
+    a.volume=0.6;
+    a.play();
+  }catch(e){}
+}
+
+function showVictoryOverlay(isBoar,exitSrc){
+  var overlay=document.getElementById('winOverlay');
+  document.getElementById('winTitle').textContent='🏆 Vitória!';
+  
+  if(isBoar){
+    document.getElementById('winSub').textContent='Obelix encontrou o javali assado! 🐗';
+    document.getElementById('winReward').innerHTML='<img src="'+CHARS.boar+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
+    speak('Obelix encontrou o javali!');
+  }else{
+    var rChar=SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)];
+    document.getElementById('winSub').textContent='Salvaste o '+rChar.name+'! 🎉';
+    document.getElementById('winReward').innerHTML='<img src="'+rChar.img+'" class="reward-img" style="width:clamp(80px,20vw,150px);height:clamp(80px,20vw,150px);object-fit:contain;border-radius:12px;background:rgba(255,255,255,0.1);padding:8px">';
+    speak('Salvaste o '+rChar.name+'!');
+  }
+  
+  overlay.classList.add('active');
+  isWaiting=false;
 }
 
 function nextLevel(){
