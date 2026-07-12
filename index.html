@@ -104,7 +104,14 @@ const CHARS={
   dogmatix:'assets/dogmatix.png',
 };
 
-const FOREST_CARDS=['assets/cards/forest_tree.png','assets/cards/forest_house.png','assets/cards/forest_pond.png'];
+const FOREST_CARDS=['assets/cards_sliced/forest_0_4.png','assets/cards_sliced/forest_0_5.png','assets/cards_sliced/forest_0_6.png','assets/cards_sliced/forest_0_7.png',
+  'assets/cards_sliced/forest_1_0.png','assets/cards_sliced/forest_1_1.png','assets/cards_sliced/forest_1_2.png','assets/cards_sliced/forest_1_7.png',
+  'assets/cards_sliced/forest_2_0.png','assets/cards_sliced/forest_2_1.png','assets/cards_sliced/forest_2_2.png','assets/cards_sliced/forest_2_5.png','assets/cards_sliced/forest_2_7.png',
+  'assets/cards_sliced/forest_3_0.png','assets/cards_sliced/forest_3_1.png','assets/cards_sliced/forest_3_2.png','assets/cards_sliced/forest_3_3.png','assets/cards_sliced/forest_3_4.png','assets/cards_sliced/forest_3_5.png','assets/cards_sliced/forest_3_7.png',
+  'assets/cards_sliced/forest_4_0.png','assets/cards_sliced/forest_4_1.png','assets/cards_sliced/forest_4_2.png','assets/cards_sliced/forest_4_3.png','assets/cards_sliced/forest_4_4.png','assets/cards_sliced/forest_4_7.png',
+  'assets/cards_sliced/forest_5_0.png','assets/cards_sliced/forest_5_1.png','assets/cards_sliced/forest_5_2.png','assets/cards_sliced/forest_5_3.png','assets/cards_sliced/forest_5_4.png','assets/cards_sliced/forest_5_6.png','assets/cards_sliced/forest_5_7.png',
+  'assets/cards_sliced/forest_6_0.png','assets/cards_sliced/forest_6_1.png','assets/cards_sliced/forest_6_2.png','assets/cards_sliced/forest_6_3.png','assets/cards_sliced/forest_6_4.png','assets/cards_sliced/forest_6_6.png','assets/cards_sliced/forest_6_7.png',
+  'assets/cards_sliced/forest_7_0.png','assets/cards_sliced/forest_7_1.png','assets/cards_sliced/forest_7_2.png','assets/cards_sliced/forest_7_3.png','assets/cards_sliced/forest_7_4.png','assets/cards_sliced/forest_7_7.png'];
 
 function cardSrc(r,c,type){
   if(type===0){
@@ -113,7 +120,7 @@ function cardSrc(r,c,type){
     if(!window._fc[key])window._fc[key]=FOREST_CARDS[Math.floor(Math.random()*FOREST_CARDS.length)];
     return window._fc[key];
   }
-  return 'assets/cards/road_'+type+'.png';
+  return 'assets/cards_sliced/road_type_'+type+'.png';
 }
 
 const SAVE_CHARS=[
@@ -499,7 +506,7 @@ function renderChoices(){
     btn.className='choice-btn';
     btn.dataset.type=type;
     var cimg=document.createElement('img');
-    cimg.src='assets/cards/road_'+type+'.png';
+    cimg.src='assets/cards_sliced/road_type_'+type+'.png';
     cimg.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
     btn.appendChild(cimg);
     
