@@ -635,13 +635,14 @@ function showVictory(){
     if(card&&card.querySelector('img[src*="roman"]'))romanPositions.push(pos);
   });
   
-  // Obelix walks the path
-  var obelixImg=document.createElement('img');
-  obelixImg.src=CHARS.obelix;
-  obelixImg.style.cssText='position:fixed;width:clamp(40px,10vw,80px);height:'+
-    'clamp(40px,10vw,80px);z-index:100;transition:all 0.4s ease;object-fit:contain;'+
-    'pointer-events:none;transform:scaleX(1)';
+  // Obelix walks the path — move existing entry Obelix
+  var obelixImg=document.querySelector('.card img[src*="obelix"]');
+  if(!obelixImg)return;
+  var origParent=obelixImg.parentNode;
+  var origStyle=obelixImg.getAttribute('style')||'';
   document.body.appendChild(obelixImg);
+  obelixImg.style.cssText='position:fixed;z-index:100;transition:all 0.3s ease;object-fit:contain;'+
+    'pointer-events:none;'+origStyle.replace(/position:absolute;/g,'');
   
   // Start at first cell
   var first=roadPath[0];
