@@ -27,7 +27,7 @@ body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;display:flex;justify-c
 .card.missing .qmark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,30px);color:#f1c40f;font-weight:700}
 .card.filled{border-color:#4ecca3;animation:popIn 0.3s ease}
 .card svg{width:100%;height:100%;display:block}
-.char-icon{position:absolute;width:clamp(20px,5vw,36px);height:clamp(20px,5vw,36px);object-fit:contain;pointer-events:none;z-index:2}
+.char-icon{position:absolute;width:clamp(80px,20vw,144px);height:clamp(80px,20vw,144px);object-fit:contain;pointer-events:none;z-index:2}
 @keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
 
 .choices{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(4px,1vw,8px);padding:4px 10px 8px;flex-shrink:0}
@@ -455,21 +455,21 @@ function renderGrid(){
         if(roadGrid[r][c]>=3&&roadGrid[r][c]<=6&&Math.random()<0.4){
           var rom=document.createElement('img');
           rom.src=CHARS.roman;
-          rom.style.cssText='position:absolute;bottom:clamp(4px,1vw,8px);right:clamp(2px,0.5vw,5px);width:clamp(14px,3.5vw,28px);height:clamp(14px,3.5vw,28px);z-index:2;object-fit:contain;opacity:0.9';
+          rom.style.cssText='position:absolute;bottom:clamp(10px,2vw,20px);right:clamp(5px,1vw,12px);width:clamp(56px,14vw,112px);height:clamp(56px,14vw,112px);z-index:2;object-fit:contain;opacity:0.9';
           card.appendChild(rom);
         }
         if(isEntry){
           var icon=document.createElement('img');
           icon.className='char-icon';
           icon.src=CHARS.obelix;
-          icon.style.cssText='position:absolute;left:2px;top:2px;width:clamp(14px,3.5vw,26px);height:clamp(14px,3.5vw,26px);z-index:2';
+          icon.style.cssText='position:absolute;left:2px;top:2px;width:clamp(56px,14vw,104px);height:clamp(56px,14vw,104px);z-index:2';
           card.appendChild(icon);
         }
         if(isExit){
           var icon=document.createElement('img');
           icon.className='char-icon';
           icon.src=Math.random()<0.5?CHARS.boar:SAVE_CHARS[Math.floor(Math.random()*SAVE_CHARS.length)].img;
-          icon.style.cssText='position:absolute;right:2px;bottom:2px;width:clamp(14px,3.5vw,26px);height:clamp(14px,3.5vw,26px);z-index:2';
+          icon.style.cssText='position:absolute;right:2px;bottom:2px;width:clamp(56px,14vw,104px);height:clamp(56px,14vw,104px);z-index:2';
           card.appendChild(icon);
         }
       }else{
@@ -559,7 +559,7 @@ function checkChoice(el,type){
       var hasRoman=romanCells.some(function(p){return p[0]===pos.r&&p[1]===pos.c});
       card.innerHTML='<img src="assets/cards_sliced/GoodGen_'+type+'.png" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none">';
       if(hasRoman){
-        card.innerHTML+='<img src="'+CHARS.roman+'" style="position:absolute;bottom:clamp(4px,1vw,8px);right:clamp(2px,0.5vw,5px);width:clamp(14px,3.5vw,28px);height:clamp(14px,3.5vw,28px);z-index:2;object-fit:contain;opacity:0.9">';
+        card.innerHTML+='<img src="'+CHARS.roman+'" style="position:absolute;bottom:clamp(10px,2vw,20px);right:clamp(5px,1vw,12px);width:clamp(56px,14vw,112px);height:clamp(56px,14vw,112px);z-index:2;object-fit:contain;opacity:0.9">';
       }
     }
     
