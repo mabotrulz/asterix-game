@@ -681,23 +681,31 @@ function showVictory(){
       var isOuch=Math.random()<0.5;
       playSound('assets/'+(isOuch?'roman_ouch.wav':'roman_ui.wav'));
       
+      // Detach from card to avoid overflow:hidden clipping
+      var romRect=romEl.getBoundingClientRect();
+      var gameEl=document.querySelector('.game')||document.body;
+      romEl.remove();
+      gameEl.appendChild(romEl);
+      romEl.style.cssText='position:fixed;left:'+romRect.left+'px;top:'+romRect.top+'px;'+
+        'width:'+romRect.width+'px;height:'+romRect.height+'px;z-index:150;object-fit:contain';
+      
       // Make Roman fly away
       var flyUp=Math.random()<0.5;
       if(flyUp){
         romEl.style.transition='all 1.5s ease';
-        romEl.style.transform='translateY(-200px) scale(0.3)';
+        romEl.style.top='-200px';
         romEl.style.opacity='0';
       }else{
         romEl.style.transition='all 0.8s cubic-bezier(0.34,1.56,0.64,1)';
-        romEl.style.transform='translate(-50%,-50%) scale(4)';
+        romEl.style.width='clamp(120px,30vw,240px)';
+        romEl.style.height='clamp(120px,30vw,240px)';
         romEl.style.left='50%';
         romEl.style.top='50%';
-        romEl.style.width='clamp(80px,20vw,160px)';
-        romEl.style.height='clamp(80px,20vw,160px)';
+        romEl.style.transform='translate(-50%,-50%)';
         romEl.style.zIndex='200';
         setTimeout(function(){
           romEl.style.transition='all 1.2s ease';
-          romEl.style.transform='translateY(200px) scale(0.5)';
+          romEl.style.top='120%';
           romEl.style.opacity='0';
         },500);
       }
