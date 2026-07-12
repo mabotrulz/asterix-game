@@ -635,27 +635,13 @@ function showVictory(){
     if(card&&card.querySelector('img[src*="roman"]'))romanPositions.push(pos);
   });
   
-  // Obelix walks the path — copy from entry card to get correct size
-  var origObelix=document.querySelector('.card img[src*="obelix"]');
-  if(!origObelix)return;
-  var origRect=origObelix.getBoundingClientRect();
-  origObelix.style.opacity='0.3';
-  var obelixImg=document.createElement('img');
-  obelixImg.src=CHARS.obelix;
-  obelixImg.style.cssText='position:fixed;z-index:100;object-fit:contain;'+
-    'pointer-events:none;opacity:0;width:'+origRect.width+'px;height:'+origRect.height+'px';
-  document.body.appendChild(obelixImg);
-  
-  // Start at first cell - snap to position immediately (no transition yet)
-  var first=roadPath[0];
-  var firstCard=document.querySelectorAll('.card')[first[0]*GRID+first[1]];
-  if(firstCard){
-    var r=firstCard.getBoundingClientRect();
-    obelixImg.style.left=(r.left+r.width/2-origRect.width/2)+'px';
-    obelixImg.style.top=(r.top+r.height/2-origRect.height/2)+'px';
-  }
-  // Now add transition for the walk animation
-  obelixImg.style.transition='all 0.3s ease';
+  // Obelix walks the path — just move the existing one
+  var obelixImg=document.querySelector('.card img[src*="obelix"]');
+  if(!obelixImg)return;
+  var origStyle=obelixImg.getAttribute('style')||'';
+  var rect=obelixImg.getBoundingClientRect();
+  obelixImg.style.cssText='position:fixed;z-index:100;left:'+rect.left+'px;top:'+rect.top+'px;'+
+    'width:'+rect.width+'px;height:'+rect.height+'px;object-fit:contain;pointer-events:none;transition:all 0.3s ease';
   
   var step=0;
   var totalSteps=roadPath.length;
