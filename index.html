@@ -528,14 +528,17 @@ function renderChoices(){
   var cd=document.getElementById('choices');
   cd.innerHTML='';
   
-  // Generate 4 different choices
-  var correctType=currentAnswers[0]; // first missing slot's correct type
-  var choices=[correctType];
-  var otherTypes=[1,2,3,4,5,6].filter(function(t){return t!==correctType});
-  shuffle(otherTypes);
-  // Fill with 3 different wrong types
-  for(var ci=0;ci<3&&ci<otherTypes.length;ci++){
-    choices.push(otherTypes[ci]);
+  // Generate choices covering all missing slots
+  var choices=[];
+  // Add all correct types (one per missing slot, no duplicates)
+  currentAnswers.forEach(function(t){
+    if(choices.indexOf(t)<0)choices.push(t);
+  });
+  // Fill with random different types to reach 4
+  var allTypes=[1,2,3,4,5,6];
+  shuffle(allTypes);
+  for(var ci=0;choices.length<4&&ci<allTypes.length;ci++){
+    if(choices.indexOf(allTypes[ci])<0)choices.push(allTypes[ci]);
   }
   shuffle(choices);
   
