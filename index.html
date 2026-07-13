@@ -610,6 +610,7 @@ function checkChoice(el,type){
     
     document.getElementById('feedback').textContent='✅ Correto!';
     document.getElementById('feedback').className='feedback ok';
+    try{new Audio('assets/correct_yes.ogg').play();}catch(e){}
     score++;
     document.getElementById('scoreDisplay').textContent=score+' ⭐';
     
@@ -689,6 +690,7 @@ function showVictory(){
     obelixImg.style.opacity='1';
     obelixImg.style.left=(r.left+r.width/2-30)+'px';
     obelixImg.style.top=(r.top+r.height/2-30)+'px';
+    try{new Audio('assets/walk_oh.ogg').play();}catch(e){}
     
     // Check for Roman on this card
     var romEl=card.querySelector('img[src*="roman"]');
