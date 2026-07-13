@@ -243,7 +243,7 @@ function generateRoad(){
   }
   
   // Fallback: if path too short or too straight, use a guaranteed zigzag
-  if(path.length<5||path.length<GRID*1.5){
+  if(path.length<6||path.length<GRID*1.2){
     return generateFallbackPath(entryEdge,exitEdge);
   }
   
