@@ -624,6 +624,7 @@ function checkChoice(el,type){
     el.classList.add('wrong');
     document.getElementById('feedback').textContent='❌ Não encaixa!';
     document.getElementById('feedback').className='feedback fail';
+    try{new Audio('assets/wrong_no.ogg').play();}catch(e){}
     // Re-shuffle choices on wrong answer
     var ci=document.getElementById('choices');
     var btns=Array.from(ci.children);
