@@ -673,6 +673,7 @@ function showVictory(){
   function walkStep(){
     if(step>=totalSteps){
       // Walk done - show victory
+      try{new Audio('assets/victory_ding.ogg').play();}catch(e){}
       obelixImg.style.transition='all 1s ease';
       obelixImg.style.opacity='0';
       setTimeout(function(){
